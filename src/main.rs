@@ -80,33 +80,33 @@ const SCOLOR_REGS: *mut ColorRegs = 0x2c0 as *mut ColorRegs;
 const COLOR_REGS: *mut ColorRegs = 0xd012 as *mut ColorRegs;
 
 fn cpu_meter_init() {
-  unsafe {
-    let dmctl = (*SDMCTL).read();
-    (*SDMCTL).write(dmctl | 0x18);
-    (*PMCTL).write(3); // GTIA: enable players
-    (*PMBASE).write(0xd8);
-    (*HPOSP0).write(0xcc - 6);  // right
-    (*HPOSP1).write(0x2c + 6);  // left
-    (*SCOLOR_REGS).colpm0.write(0xb4);
-    (*SCOLOR_REGS).colpm1.write(0x84);
-  }
+    unsafe {
+        let dmctl = (*SDMCTL).read();
+        (*SDMCTL).write(dmctl | 0x18);
+        (*PMCTL).write(3); // GTIA: enable players
+        (*PMBASE).write(0xd8);
+        (*HPOSP0).write(0xcc - 6); // right
+        (*HPOSP1).write(0x2c + 6); // left
+        (*SCOLOR_REGS).colpm0.write(0xb4);
+        (*SCOLOR_REGS).colpm1.write(0x84);
+    }
 }
 
 fn cpu_meter_done() {
-  unsafe {
-    (*COLOR_REGS).colpm0.write(0);
-    (*COLOR_REGS).colpm1.write(0);
-  }
+    unsafe {
+        (*COLOR_REGS).colpm0.write(0);
+        (*COLOR_REGS).colpm1.write(0);
+    }
 }
 
 fn ferris_init(ferris_addr: u16) {
     unsafe {
-      (*SCOLOR_REGS).colbk.write(0);
-      (*SCOLOR_REGS).colpf2.write(0xf);
-      (*SCOLOR_REGS).colpf1.write(0x34);
-      (*SCOLOR_REGS).colpf0.write(0x31);
+        (*SCOLOR_REGS).colbk.write(0);
+        (*SCOLOR_REGS).colpf2.write(0xf);
+        (*SCOLOR_REGS).colpf1.write(0x34);
+        (*SCOLOR_REGS).colpf0.write(0x31);
 
-      let dmctl = (*SDMCTL).read();
+        let dmctl = (*SDMCTL).read();
         (*SDMCTL).write(dmctl & 0xfc | 0x21);
 
         let mut addr = ferris_addr;
@@ -119,10 +119,10 @@ fn ferris_init(ferris_addr: u16) {
 }
 
 fn wait_vbl() {
-  unsafe {
-    let next_t = (*TIMER).read() + 1;
-    while (*TIMER).read() != next_t {}
-  }
+    unsafe {
+        let next_t = (*TIMER).read() + 1;
+        while (*TIMER).read() != next_t {}
+    }
 }
 
 fn set_ferris_position(x: i8, y: i8) {
@@ -147,13 +147,14 @@ fn main(_argc: isize, _args: *const *const u8) -> isize {
     cpu_meter_init();
     ferris_init(ferris_addr);
 
-    // (*SDMCTL).write(0x39);
-
     let mut alpha1: u16 = 0;
     let mut alpha2: u16 = 0;
     let mut x_offs: i8 = 0;
     loop {
-        set_ferris_position(x_offs + math::sin((alpha1 >> 8) as u8) / 4, math::sin((alpha2 >> 8) as u8) / 4);
+        set_ferris_position(
+            x_offs + math::sin((alpha1 >> 8) as u8) / 4,
+            math::sin((alpha2 >> 8) as u8) / 4,
+        );
 
         alpha1 += 1400;
         alpha2 += 900;

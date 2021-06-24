@@ -16,7 +16,7 @@ const SIN: [i8; 256] = [
 ];
 
 pub fn sin(alpha: u8) -> i8 {
-    SIN[alpha as  usize]
+    SIN[alpha as usize]
 }
 
 pub fn cos(alpha: u8) -> i8 {
