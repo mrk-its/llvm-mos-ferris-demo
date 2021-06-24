@@ -76,8 +76,39 @@ const PMCTL: *mut RW<u8> = 0xd01d as *mut RW<u8>;
 const HPOSP0: *mut RW<u8> = 0xd000 as *mut RW<u8>;
 const HPOSP1: *mut RW<u8> = 0xd001 as *mut RW<u8>;
 
-fn init_ferris(ferris_addr: u16) {
+const SCOLOR_REGS: *mut ColorRegs = 0x2c0 as *mut ColorRegs;
+const COLOR_REGS: *mut ColorRegs = 0xd012 as *mut ColorRegs;
+
+fn cpu_meter_init() {
+  unsafe {
+    let dmctl = (*SDMCTL).read();
+    (*SDMCTL).write(dmctl | 0x18);
+    (*PMCTL).write(3); // GTIA: enable players
+    (*PMBASE).write(0xd8);
+    (*HPOSP0).write(0xcc - 6);  // right
+    (*HPOSP1).write(0x2c + 6);  // left
+    (*SCOLOR_REGS).colpm0.write(0xb4);
+    (*SCOLOR_REGS).colpm1.write(0x84);
+  }
+}
+
+fn cpu_meter_done() {
+  unsafe {
+    (*COLOR_REGS).colpm0.write(0);
+    (*COLOR_REGS).colpm1.write(0);
+  }
+}
+
+fn ferris_init(ferris_addr: u16) {
     unsafe {
+      (*SCOLOR_REGS).colbk.write(0);
+      (*SCOLOR_REGS).colpf2.write(0xf);
+      (*SCOLOR_REGS).colpf1.write(0x34);
+      (*SCOLOR_REGS).colpf0.write(0x31);
+
+      let dmctl = (*SDMCTL).read();
+        (*SDMCTL).write(dmctl & 0xfc | 0x21);
+
         let mut addr = ferris_addr;
         for line in DLIST.lines.iter_mut() {
             line.lo_addr = (addr & 0xff) as u8;
@@ -85,6 +116,13 @@ fn init_ferris(ferris_addr: u16) {
             addr += 64;
         }
     }
+}
+
+fn wait_vbl() {
+  unsafe {
+    let next_t = (*TIMER).read() + 1;
+    while (*TIMER).read() != next_t {}
+  }
 }
 
 fn set_ferris_position(x: i8, y: i8) {
@@ -104,42 +142,24 @@ fn set_ferris_position(x: i8, y: i8) {
 
 #[start]
 fn main(_argc: isize, _args: *const *const u8) -> isize {
-    unsafe {
-        let shadow_color_regs = &mut *(0x2c0 as *mut ColorRegs);
-        let color_regs = &mut *(0xd012 as *mut ColorRegs);
+    let ferris_addr = &FERRIS_DATA as *const AlignedImage as u16;
 
-        shadow_color_regs.colpm0.write(0xb4);
-        shadow_color_regs.colpm1.write(0x84);
-        shadow_color_regs.colbk.write(0);
-        shadow_color_regs.colpf2.write(0xf);
-        shadow_color_regs.colpf1.write(0x34);
-        shadow_color_regs.colpf0.write(0x31);
+    cpu_meter_init();
+    ferris_init(ferris_addr);
 
-        let ferris_addr = &FERRIS_DATA as *const AlignedImage as u16;
+    // (*SDMCTL).write(0x39);
 
-        init_ferris(ferris_addr);
+    let mut alpha1: u16 = 0;
+    let mut alpha2: u16 = 0;
+    let mut x_offs: i8 = 0;
+    loop {
+        set_ferris_position(x_offs + math::sin((alpha1 >> 8) as u8) / 4, math::sin((alpha2 >> 8) as u8) / 4);
 
-        (*SDMCTL).write(0x39);
-        (*PMCTL).write(3); // enable players
-        (*PMBASE).write(0xd8);
-        (*HPOSP0).write(0xcc - 6);
-        (*HPOSP1).write(0x2c + 6);
+        alpha1 += 1400;
+        alpha2 += 900;
+        x_offs -= 1;
 
-        let mut alpha1: u16 = 0;
-        let mut alpha2: u16 = 0;
-        let mut x_offs: i8 = 0;
-        loop {
-            set_ferris_position(x_offs + math::sin((alpha1 >> 8) as u8) / 4, math::sin((alpha2 >> 8) as u8) / 4);
-
-            color_regs.colpm0.write(0);
-            color_regs.colpm1.write(0);
-
-            let next_t = (*TIMER).read() + 1;
-            while (*TIMER).read() != next_t {}
-
-            alpha1 += 1400;
-            alpha2 += 900;
-            // x_offs -= 1;
-        }
+        cpu_meter_done();
+        wait_vbl();
     }
 }
