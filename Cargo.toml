@@ -1,0 +1,19 @@
+[package]
+name = "ferris"
+version = "0.1.0"
+edition = "2018"
+
+[dependencies]
+volatile-register = "0"
+
+[workspace]
+
+[profile.dev]
+panic = "abort"
+opt-level = 2
+lto = true
+debug-assertions = false
+overflow-checks = false
+
+[profile.release]
+lto = true
