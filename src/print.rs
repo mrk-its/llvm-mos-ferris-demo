@@ -17,6 +17,7 @@ impl core::fmt::Write for WriteStr {
     }
 }
 
+#[allow(dead_code)]
 pub fn write_args(args: &core::fmt::Arguments) {
     core::fmt::write(&mut crate::print::WriteStr, *args).unwrap();
 }
