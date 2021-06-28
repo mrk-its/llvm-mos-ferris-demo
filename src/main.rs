@@ -189,12 +189,12 @@ fn update_dlist(index: &mut usize, lines: &mut [DisplayListLine], byte_offs: u8)
         let lo1 = lo0 + 64;
         let lo2 = lo0 + 128;
         let lo3 = lo0 + 192;
-        for line in lines.chunks_mut(16) {
+        for lines in lines.chunks_mut(16) {
             let mut i = *index as usize;
             if i >= FERRIS_HEIGHT - FERRIS_MARGIN {
                 i = 0;
             }
-            let mut ptr = &(line[0].lo_addr) as *const u8 as usize;
+            let mut ptr = &(lines[0].lo_addr) as *const u8 as usize;
             let mut optr: usize = &(FERRIS_HI_OFFSETS[i]) as *const u8 as usize;
 
             *(ptr as *mut u8) = lo0;
