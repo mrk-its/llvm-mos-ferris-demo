@@ -25,7 +25,9 @@ const RANDOM: *mut RW<u8> = 0xd20a as *mut RW<u8>;
 const SCOLOR_REGS: *mut ColorRegs = 0x2c0 as *mut ColorRegs;
 const COLOR_REGS: *mut ColorRegs = 0xd012 as *mut ColorRegs;
 
-const TEXT: &[u8] = b"                                    https://github/llvm-mos/                                        ";
+const TEXT: &[u8] = b"                                    \
+                       https://github.com/llvm-mos                                    \
+                       https://github.com/mrk-its/rust                                    ";
 
 #[panic_handler]
 fn panic(_info: &PanicInfo) -> ! {
@@ -64,11 +66,10 @@ const FERRIS_DATA: AlignedImage = AlignedImage {
     data: *include_bytes!("ferris.dat"),
 };
 
-const SCREEN_HEIGHT: usize = 208;
+const SCREEN_HEIGHT: usize = 232;
 
 static mut FERRIS_LO_OFFSETS: [u8; FERRIS_HEIGHT] = [0; FERRIS_HEIGHT];
 static mut FERRIS_HI_OFFSETS: [u8; FERRIS_HEIGHT] = [0; FERRIS_HEIGHT];
-
 
 #[derive(Clone, Copy)]
 pub struct DisplayListLine {
@@ -79,20 +80,20 @@ pub struct DisplayListLine {
 
 #[repr(align(1024))]
 pub struct DisplayList {
-    pub data: [u8; 0],
-    pub lines: [DisplayListLine; SCREEN_HEIGHT],
+    pub data: [u8; 1],
+    pub lines: [DisplayListLine; 208],
     pub text: DisplayListLine,
     pub lines2: [DisplayListLine; 16],
     pub footer: DisplayListLine,
 }
 
 static mut DLIST: DisplayList = DisplayList {
-    data: [0x70; 0],
+    data: [0x30; 1],
     lines: [DisplayListLine {
         mode: 0x5e,
         lo_addr: 0,
         hi_addr: 0,
-    }; SCREEN_HEIGHT],
+    }; 208],
     text: DisplayListLine {
         mode: 0x52,
         lo_addr: 0x0,
@@ -112,8 +113,6 @@ static mut DLIST: DisplayList = DisplayList {
 
 fn cpu_meter_init() {
     unsafe {
-        let dmctl = (*SDMCTL).read();
-        (*SDMCTL).write(dmctl | 0x18);
         (*PMCTL).write(3); // GTIA: enable players
         (*PMBASE).write(0xd8);
         (*HPOSP0).write(0xcc - 6); // right
@@ -166,11 +165,8 @@ fn ferris_init(ferris_start_addr: usize) {
     unsafe {
         (*SCOLOR_REGS).colbk.write(0);
         (*SCOLOR_REGS).colpf2.write(0xf);
-        (*SCOLOR_REGS).colpf1.write(0x34);
-        (*SCOLOR_REGS).colpf0.write(0x31);
-
-        let dmctl = (*SDMCTL).read();
-        (*SDMCTL).write(dmctl & 0xfc | 0x21);
+        (*SCOLOR_REGS).colpf1.write(0x24);
+        (*SCOLOR_REGS).colpf0.write(0x20);
 
         let dladdr = &mut DLIST as *mut DisplayList as usize;
         DLIST.footer.lo_addr = (dladdr & 0xff) as u8;
@@ -200,22 +196,86 @@ fn update_dlist(index: &mut usize, lines: &mut [DisplayListLine], byte_offs: u8)
             }
             let mut ptr = &(line[0].lo_addr) as *const u8 as usize;
             let mut optr: usize = &(FERRIS_HI_OFFSETS[i]) as *const u8 as usize;
-            *(ptr as *mut u8) = lo0; ptr+=1; *(ptr as *mut u8) = *(optr as *mut u8);  ptr+=1; ptr+=1; optr+=1;
-            *(ptr as *mut u8) = lo1; ptr+=1; *(ptr as *mut u8) = *(optr as *mut u8);  ptr+=1; ptr+=1; optr+=1;
-            *(ptr as *mut u8) = lo2; ptr+=1; *(ptr as *mut u8) = *(optr as *mut u8);  ptr+=1; ptr+=1; optr+=1;
-            *(ptr as *mut u8) = lo3; ptr+=1; *(ptr as *mut u8) = *(optr as *mut u8);  ptr+=1; ptr+=1; optr+=1;
-            *(ptr as *mut u8) = lo0; ptr+=1; *(ptr as *mut u8) = *(optr as *mut u8);  ptr+=1; ptr+=1; optr+=1;
-            *(ptr as *mut u8) = lo1; ptr+=1; *(ptr as *mut u8) = *(optr as *mut u8);  ptr+=1; ptr+=1; optr+=1;
-            *(ptr as *mut u8) = lo2; ptr+=1; *(ptr as *mut u8) = *(optr as *mut u8);  ptr+=1; ptr+=1; optr+=1;
-            *(ptr as *mut u8) = lo3; ptr+=1; *(ptr as *mut u8) = *(optr as *mut u8);  ptr+=1; ptr+=1; optr+=1;
-            *(ptr as *mut u8) = lo0; ptr+=1; *(ptr as *mut u8) = *(optr as *mut u8);  ptr+=1; ptr+=1; optr+=1;
-            *(ptr as *mut u8) = lo1; ptr+=1; *(ptr as *mut u8) = *(optr as *mut u8);  ptr+=1; ptr+=1; optr+=1;
-            *(ptr as *mut u8) = lo2; ptr+=1; *(ptr as *mut u8) = *(optr as *mut u8);  ptr+=1; ptr+=1; optr+=1;
-            *(ptr as *mut u8) = lo3; ptr+=1; *(ptr as *mut u8) = *(optr as *mut u8);  ptr+=1; ptr+=1; optr+=1;
-            *(ptr as *mut u8) = lo0; ptr+=1; *(ptr as *mut u8) = *(optr as *mut u8);  ptr+=1; ptr+=1; optr+=1;
-            *(ptr as *mut u8) = lo1; ptr+=1; *(ptr as *mut u8) = *(optr as *mut u8);  ptr+=1; ptr+=1; optr+=1;
-            *(ptr as *mut u8) = lo2; ptr+=1; *(ptr as *mut u8) = *(optr as *mut u8);  ptr+=1; ptr+=1; optr+=1;
-            *(ptr as *mut u8) = lo3; ptr+=1; *(ptr as *mut u8) = *(optr as *mut u8);  // ptr+=1; ptr+=1; optr+=1;
+
+            *(ptr as *mut u8) = lo0;
+            ptr += 1;
+            *(ptr as *mut u8) = *(optr as *mut u8);
+            ptr += 2;
+            optr += 1;
+            *(ptr as *mut u8) = lo1;
+            ptr += 1;
+            *(ptr as *mut u8) = *(optr as *mut u8);
+            ptr += 2;
+            optr += 1;
+            *(ptr as *mut u8) = lo2;
+            ptr += 1;
+            *(ptr as *mut u8) = *(optr as *mut u8);
+            ptr += 2;
+            optr += 1;
+            *(ptr as *mut u8) = lo3;
+            ptr += 1;
+            *(ptr as *mut u8) = *(optr as *mut u8);
+            ptr += 2;
+            optr += 1;
+
+            *(ptr as *mut u8) = lo0;
+            ptr += 1;
+            *(ptr as *mut u8) = *(optr as *mut u8);
+            ptr += 2;
+            optr += 1;
+            *(ptr as *mut u8) = lo1;
+            ptr += 1;
+            *(ptr as *mut u8) = *(optr as *mut u8);
+            ptr += 2;
+            optr += 1;
+            *(ptr as *mut u8) = lo2;
+            ptr += 1;
+            *(ptr as *mut u8) = *(optr as *mut u8);
+            ptr += 2;
+            optr += 1;
+            *(ptr as *mut u8) = lo3;
+            ptr += 1;
+            *(ptr as *mut u8) = *(optr as *mut u8);
+            ptr += 2;
+            optr += 1;
+            *(ptr as *mut u8) = lo0;
+            ptr += 1;
+            *(ptr as *mut u8) = *(optr as *mut u8);
+            ptr += 2;
+            optr += 1;
+            *(ptr as *mut u8) = lo1;
+            ptr += 1;
+            *(ptr as *mut u8) = *(optr as *mut u8);
+            ptr += 2;
+            optr += 1;
+            *(ptr as *mut u8) = lo2;
+            ptr += 1;
+            *(ptr as *mut u8) = *(optr as *mut u8);
+            ptr += 2;
+            optr += 1;
+            *(ptr as *mut u8) = lo3;
+            ptr += 1;
+            *(ptr as *mut u8) = *(optr as *mut u8);
+            ptr += 2;
+            optr += 1;
+            *(ptr as *mut u8) = lo0;
+            ptr += 1;
+            *(ptr as *mut u8) = *(optr as *mut u8);
+            ptr += 2;
+            optr += 1;
+            *(ptr as *mut u8) = lo1;
+            ptr += 1;
+            *(ptr as *mut u8) = *(optr as *mut u8);
+            ptr += 2;
+            optr += 1;
+            *(ptr as *mut u8) = lo2;
+            ptr += 1;
+            *(ptr as *mut u8) = *(optr as *mut u8);
+            ptr += 2;
+            optr += 1;
+            *(ptr as *mut u8) = lo3;
+            ptr += 1;
+            *(ptr as *mut u8) = *(optr as *mut u8); // ptr+=1; ptr+=1; optr+=1;
             *index += 16;
         }
     }
@@ -236,6 +296,11 @@ fn set_ferris_position(x: i8, y: i8) {
 
 #[start]
 fn main(_argc: isize, _args: *const *const u8) -> isize {
+    unsafe {
+        (*SDMCTL).write(0);
+        wait_vbl();
+    }
+
     let ferris_start_addr = &FERRIS_DATA as *const AlignedImage as usize;
 
     cpu_meter_init();
@@ -245,35 +310,37 @@ fn main(_argc: isize, _args: *const *const u8) -> isize {
     let mut alpha1: usize = 0;
     let mut alpha2: usize = 0;
     let mut x_offs: i8 = 0;
-
     let mut text_pos: usize = 0;
+
+    unsafe {
+        (*SDMCTL).write(0x18 | 0x21);
+        wait_vbl();
+    }
 
     loop {
         let x = x_offs + math::sin((alpha1 >> 8) as u8) / 4;
+        let y = math::sin((alpha2 >> 8) as u8) / 4;
         let ferris_hscr = 15 - (x as u8 & 3);
         unsafe {
             (*HSCROLL).write(ferris_hscr);
         }
 
-        set_ferris_position(
-            x,
-            math::sin((alpha2 >> 8) as u8) / 2,
-        );
-        alpha1 += 1400;
-        alpha2 += 900;
-        x_offs -= 1;
+        set_ferris_position(x, y);
+        alpha1 += 1377;
+        alpha2 += 997;
+        x_offs += 0;
         cpu_meter_done();
         scroll_text(text_pos / 4);
         let test_hscr = 15 - text_pos as u8 & 3;
         unsafe {
             let colpf1_save = (*SCOLOR_REGS).colpf1.read();
             let colpf2_save = (*SCOLOR_REGS).colpf2.read();
-            while (*VCOUNT).read() < 214 / 2 {};
+            while (*VCOUNT).read() < 218 / 2 {}
             (*WSYNC).write(test_hscr);
             (*WSYNC).write(test_hscr);
 
             (*HSCROLL).write(test_hscr);
-            (*COLOR_REGS).colpf1.write(0x0d);
+            (*COLOR_REGS).colpf1.write(0x0c);
             (*COLOR_REGS).colpf2.write(0x0);
             (*WSYNC).write(test_hscr);
             (*WSYNC).write(test_hscr);
@@ -287,7 +354,7 @@ fn main(_argc: isize, _args: *const *const u8) -> isize {
             (*COLOR_REGS).colpf2.write(colpf2_save);
             (*COLOR_REGS).colpf1.write(colpf1_save);
         }
-        text_pos = (text_pos + 1) % ((TEXT.len() - 32 )* 4);
+        text_pos = (text_pos + 1) % ((TEXT.len() - 32) * 4);
         wait_vbl();
     }
 }
