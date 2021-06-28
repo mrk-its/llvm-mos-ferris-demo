@@ -275,7 +275,10 @@ fn update_dlist(index: &mut usize, lines: &mut [DisplayListLine], byte_offs: u8)
             optr += 1;
             *(ptr as *mut u8) = lo3;
             ptr += 1;
-            *(ptr as *mut u8) = *(optr as *mut u8); // ptr+=1; ptr+=1; optr+=1;
+            *(ptr as *mut u8) = *(optr as *mut u8);
+            ptr += 1;
+            ptr += 1;
+            optr += 1;
             *index += 16;
         }
     }

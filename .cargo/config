@@ -1,6 +1,6 @@
 [build]
 target = "mos-unknown-none"
-rustflags = "-Cdebuginfo=0 -Clinker=../llvm-mos/build/bin/clang -Clink-arg=--config -Clink-arg=../llvm-mos-sdk/build/atari/800xl.cfg -Cdefault-linker-libraries=y"
+rustflags = "-Cdebuginfo=0 -Clinker=../llvm-mos/build/bin/clang -Clink-arg=--config -Clink-arg=../llvm-mos-sdk/build/atari/800xl.cfg -Cdefault-linker-libraries=y --emit=llvm-ir"
 # rustflags = "-Cdebuginfo=0 -Clinker=../llvm-mos/build/bin/clang -Clink-arg=--config -Clink-arg=../llvm-mos-sdk/build/atari/800xl.cfg"
 
 [unstable]
