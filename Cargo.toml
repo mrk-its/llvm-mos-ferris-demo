@@ -10,7 +10,7 @@ volatile-register = "0"
 
 [profile.dev]
 panic = "abort"
-opt-level = 2
+opt-level = "s"
 lto = true
 debug-assertions = false
 overflow-checks = false

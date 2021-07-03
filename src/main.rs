@@ -10,20 +10,40 @@ mod write_to;
 use core::panic::PanicInfo;
 use volatile_register::{RO, RW};
 
-const TIMER: *const RO<u8> = 0x14 as *const RO<u8>;
-const SDMCTL: *mut RW<u8> = 0x22f as *mut RW<u8>;
-const DLPTRS: *mut RW<usize> = 0x230 as *mut RW<usize>;
-const HSCROLL: *mut RW<u8> = 0xd404 as *mut RW<u8>;
-const PMBASE: *mut RW<u8> = 0xd407 as *mut RW<u8>;
-const WSYNC: *mut RW<u8> = 0xd40a as *mut RW<u8>;
-const VCOUNT: *mut RO<u8> = 0xd40b as *mut RO<u8>;
-const PMCTL: *mut RW<u8> = 0xd01d as *mut RW<u8>;
-const HPOSP0: *mut RW<u8> = 0xd000 as *mut RW<u8>;
-const HPOSP1: *mut RW<u8> = 0xd001 as *mut RW<u8>;
-const RANDOM: *mut RW<u8> = 0xd20a as *mut RW<u8>;
+const TIMER: usize = 0x14;
+const SDMCTL: usize = 0x22f;
+const DLPTRS: usize = 0x230;
+const HSCROLL: usize = 0xd404;
+const PMBASE: usize = 0xd407;
+const WSYNC: usize = 0xd40a;
+const VCOUNT: usize = 0xd40b;
+const PMCTL: usize = 0xd01d;
+const HPOSP0: usize = 0xd000;
+const HPOSP1: usize = 0xd001;
+const RANDOM: usize = 0xd20a;
 
-const SCOLOR_REGS: *mut ColorRegs = 0x2c0 as *mut ColorRegs;
-const COLOR_REGS: *mut ColorRegs = 0xd012 as *mut ColorRegs;
+const COLPM0: usize = 0xd012;
+const COLPM1: usize = 0xd013;
+const COLPM2: usize = 0xd014;
+const COLPM3: usize = 0xd015;
+const COLPF0: usize = 0xd016;
+const COLPF1: usize = 0xd017;
+const COLPF2: usize = 0xd018;
+const COLPF3: usize = 0xd019;
+const COLBK: usize = 0xd01a;
+
+const COLPM0S: usize = 0x2c0;
+const COLPM1S: usize = 0x2c1;
+const COLPM2S: usize = 0x2c2;
+const COLPM3S: usize = 0x2c3;
+const COLPF0S: usize = 0x2c4;
+const COLPF1S: usize = 0x2c5;
+const COLPF2S: usize = 0x2c6;
+const COLPF3S: usize = 0x2c7;
+const COLBKS: usize = 0x2c8;
+
+// const SCOLOR_REGS: *mut ColorRegs = 0x2c0 as *mut ColorRegs;
+// const COLOR_REGS: *mut ColorRegs = 0xd012 as *mut ColorRegs;
 
 const TEXT: &[u8] = b"                                    \
                        https://github.com/llvm-mos                                    \
@@ -35,23 +55,28 @@ fn panic(_info: &PanicInfo) -> ! {
     //     print::write_args(args);
     // }
     loop {
-        unsafe {
-            (*COLOR_REGS).colbk.write((*RANDOM).read());
-        }
+        io_write_u8(COLBK, io_read_u8(RANDOM));
     }
 }
 
-#[repr(C)]
-pub struct ColorRegs {
-    colpm0: RW<u8>,
-    colpm1: RW<u8>,
-    colpm2: RW<u8>,
-    colpm3: RW<u8>,
-    colpf0: RW<u8>,
-    colpf1: RW<u8>,
-    colpf2: RW<u8>,
-    colpf3: RW<u8>,
-    colbk: RW<u8>,
+pub fn io_write<T: Copy>(addr: usize, value: T) {
+    unsafe {
+        (*(addr as *const RW<T>)).write(value);
+    }
+}
+
+pub fn io_write_u8(addr: usize, value: u8) {
+    io_write(addr, value);
+}
+
+pub fn io_read<T: Copy>(addr: usize) -> T {
+    unsafe {
+        (*(addr as *const RW<T>)).read()
+    }
+}
+
+pub fn io_read_u8(addr: usize) -> u8 {
+    io_read(addr)
 }
 
 #[repr(align(4096))]
@@ -112,28 +137,23 @@ static mut DLIST: DisplayList = DisplayList {
 };
 
 fn cpu_meter_init() {
-    unsafe {
-        (*PMCTL).write(3); // GTIA: enable players
-        (*PMBASE).write(0xd8);
-        (*HPOSP0).write(0xcc - 6); // right
-        (*HPOSP1).write(0x2c + 6); // left
-        (*SCOLOR_REGS).colpm0.write(0xb4);
-        (*SCOLOR_REGS).colpm1.write(0x84);
-    }
+    io_write_u8(PMCTL, 3);  // GTIA: enable players
+    io_write_u8(PMBASE, 0xd8);
+    io_write_u8(HPOSP0, 0xcc - 6);
+    io_write_u8(HPOSP1, 0x2c + 6);
+
+    io_write_u8(COLPM0S, 0xb4);
+    io_write_u8(COLPM1S, 0x84);
 }
 
 fn cpu_meter_done() {
-    unsafe {
-        (*COLOR_REGS).colpm0.write(0);
-        (*COLOR_REGS).colpm1.write(0);
-    }
+    io_write_u8(COLPM0, 0);
+    io_write_u8(COLPM1, 0);
 }
 
 fn wait_vbl() {
-    unsafe {
-        let next_t = (*TIMER).read() + 1;
-        while (*TIMER).read() != next_t {}
-    }
+    let next_t = io_read_u8(TIMER) + 1;
+    while io_read_u8(TIMER) != next_t {};
 }
 
 fn atascii(c: u8) -> u8 {
@@ -162,16 +182,19 @@ fn scroll_text(pos: usize) {
 }
 
 fn ferris_init(ferris_start_addr: usize) {
-    unsafe {
-        (*SCOLOR_REGS).colbk.write(0);
-        (*SCOLOR_REGS).colpf2.write(0xf);
-        (*SCOLOR_REGS).colpf1.write(0x24);
-        (*SCOLOR_REGS).colpf0.write(0x20);
+    io_write_u8(COLBKS, 0);
+    io_write_u8(COLPF2S, 0xf);
+    io_write_u8(COLPF1S, 0x24);
+    io_write_u8(COLPF0S, 0x20);
 
+    unsafe {
         let dladdr = &mut DLIST as *mut DisplayList as usize;
         DLIST.footer.lo_addr = (dladdr & 0xff) as u8;
         DLIST.footer.hi_addr = (dladdr >> 8) as u8;
-        (*DLPTRS).write(dladdr);
+
+        io_write(DLPTRS, dladdr);
+
+        // (*DLPTRS).write(dladdr);
 
         let mut addr: usize = ferris_start_addr;
 
@@ -189,13 +212,13 @@ fn update_dlist(index: &mut usize, lines: &mut [DisplayListLine], byte_offs: u8)
         let lo1 = lo0 + 64;
         let lo2 = lo0 + 128;
         let lo3 = lo0 + 192;
-        let mut ptr = &(lines[0].lo_addr) as *const u8 as usize;
         for lines in lines.chunks_mut(16) {
             let mut i = *index as usize;
             if i >= FERRIS_HEIGHT - FERRIS_MARGIN {
                 i = 0;
             }
             let mut optr: usize = &(FERRIS_HI_OFFSETS[i]) as *const u8 as usize;
+            let mut ptr = &(lines[0].lo_addr) as *const u8 as usize;
 
             *(ptr as *mut u8) = lo0;
             ptr += 1;
@@ -276,8 +299,7 @@ fn update_dlist(index: &mut usize, lines: &mut [DisplayListLine], byte_offs: u8)
             *(ptr as *mut u8) = lo3;
             ptr += 1;
             *(ptr as *mut u8) = *(optr as *mut u8);
-            ptr += 1;
-            ptr += 1;
+            ptr += 2;
             optr += 1;
             *index += 16;
         }
@@ -299,10 +321,8 @@ fn set_ferris_position(x: i8, y: i8) {
 
 #[start]
 fn main(_argc: isize, _args: *const *const u8) -> isize {
-    unsafe {
-        (*SDMCTL).write(0);
-        wait_vbl();
-    }
+    io_write_u8(SDMCTL, 0);
+    wait_vbl();
 
     let ferris_start_addr = &FERRIS_DATA as *const AlignedImage as usize;
 
@@ -315,18 +335,15 @@ fn main(_argc: isize, _args: *const *const u8) -> isize {
     let mut x_offs: i8 = 0;
     let mut text_pos: usize = 0;
 
-    unsafe {
-        (*SDMCTL).write(0x18 | 0x21);
-        wait_vbl();
-    }
+    io_write_u8(SDMCTL, 0x18 | 0x21);
+    wait_vbl();
 
     loop {
         let x = x_offs + math::sin((alpha1 >> 8) as u8) / 4;
         let y = math::sin((alpha2 >> 8) as u8) / 4;
         let ferris_hscr = 15 - (x as u8 & 3);
-        unsafe {
-            (*HSCROLL).write(ferris_hscr);
-        }
+
+        io_write_u8(HSCROLL, ferris_hscr);
 
         set_ferris_position(x, y);
         alpha1 += 1377;
@@ -334,29 +351,35 @@ fn main(_argc: isize, _args: *const *const u8) -> isize {
         x_offs += 0;
         cpu_meter_done();
         scroll_text(text_pos / 4);
-        let test_hscr = 15 - text_pos as u8 & 3;
-        unsafe {
-            let colpf1_save = (*SCOLOR_REGS).colpf1.read();
-            let colpf2_save = (*SCOLOR_REGS).colpf2.read();
-            while (*VCOUNT).read() < 218 / 2 {}
-            (*WSYNC).write(test_hscr);
-            (*WSYNC).write(test_hscr);
 
-            (*HSCROLL).write(test_hscr);
-            (*COLOR_REGS).colpf1.write(0x0c);
-            (*COLOR_REGS).colpf2.write(0x0);
-            (*WSYNC).write(test_hscr);
-            (*WSYNC).write(test_hscr);
-            (*WSYNC).write(test_hscr);
-            (*WSYNC).write(test_hscr);
-            (*WSYNC).write(test_hscr);
-            (*WSYNC).write(test_hscr);
-            (*WSYNC).write(test_hscr);
-            (*WSYNC).write(test_hscr);
-            (*HSCROLL).write(ferris_hscr);
-            (*COLOR_REGS).colpf2.write(colpf2_save);
-            (*COLOR_REGS).colpf1.write(colpf1_save);
-        }
+        let test_hscr = 15 - text_pos as u8 & 3;
+        let colpf1_save = io_read_u8(COLPF1S);
+        let colpf2_save = io_read_u8(COLPF2S);
+
+        while io_read_u8(VCOUNT) < 218 / 2 {}
+
+        io_write_u8(WSYNC, test_hscr);
+        io_write_u8(WSYNC, test_hscr);
+
+        io_write_u8(HSCROLL, test_hscr);
+
+        io_write_u8(COLPF1, 0x0c);
+        io_write_u8(COLPF2, 0x0);
+
+        io_write_u8(WSYNC, test_hscr);
+        io_write_u8(WSYNC, test_hscr);
+        io_write_u8(WSYNC, test_hscr);
+        io_write_u8(WSYNC, test_hscr);
+        io_write_u8(WSYNC, test_hscr);
+        io_write_u8(WSYNC, test_hscr);
+        io_write_u8(WSYNC, test_hscr);
+        io_write_u8(WSYNC, test_hscr);
+
+        io_write_u8(HSCROLL, ferris_hscr);
+
+        io_write_u8(COLPF1, colpf1_save);
+        io_write_u8(COLPF2, colpf2_save);
+
         text_pos = (text_pos + 1) % ((TEXT.len() - 32) * 4);
         wait_vbl();
     }
