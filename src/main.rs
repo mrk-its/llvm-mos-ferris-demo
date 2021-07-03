@@ -99,8 +99,7 @@ static mut FERRIS_HI_OFFSETS: [u8; FERRIS_HEIGHT] = [0; FERRIS_HEIGHT];
 #[derive(Clone, Copy)]
 pub struct DisplayListLine {
     pub mode: u8,
-    pub lo_addr: u8,
-    pub hi_addr: u8,
+    pub addr: usize,
 }
 
 #[repr(align(1024))]
@@ -116,23 +115,19 @@ static mut DLIST: DisplayList = DisplayList {
     data: [0x30; 1],
     lines: [DisplayListLine {
         mode: 0x5e,
-        lo_addr: 0,
-        hi_addr: 0,
+        addr: 0,
     }; 208],
     text: DisplayListLine {
         mode: 0x52,
-        lo_addr: 0x0,
-        hi_addr: 0x0,
+        addr: 0x0,
     },
     lines2: [DisplayListLine {
         mode: 0x5e,
-        lo_addr: 0,
-        hi_addr: 0,
+        addr: 0,
     }; 16],
     footer: DisplayListLine {
         mode: 0x41,
-        lo_addr: 0,
-        hi_addr: 0,
+        addr: 0,
     },
 };
 
@@ -176,8 +171,7 @@ fn text_init() {
 fn scroll_text(pos: usize) {
     let text_addr = TEXT.as_ptr() as usize + pos;
     unsafe {
-        DLIST.text.lo_addr = text_addr as u8;
-        DLIST.text.hi_addr = (text_addr >> 8) as u8;
+        DLIST.text.addr = text_addr;
     }
 }
 
@@ -189,8 +183,7 @@ fn ferris_init(ferris_start_addr: usize) {
 
     unsafe {
         let dladdr = &mut DLIST as *mut DisplayList as usize;
-        DLIST.footer.lo_addr = (dladdr & 0xff) as u8;
-        DLIST.footer.hi_addr = (dladdr >> 8) as u8;
+        DLIST.footer.addr = dladdr;
 
         io_write(DLPTRS, dladdr);
 
@@ -218,7 +211,7 @@ fn update_dlist(index: &mut usize, lines: &mut [DisplayListLine], byte_offs: u8)
                 i = 0;
             }
             let mut optr: usize = &(FERRIS_HI_OFFSETS[i]) as *const u8 as usize;
-            let mut ptr = &(lines[0].lo_addr) as *const u8 as usize;
+            let mut ptr = &(lines[0].addr) as *const usize as *const u8 as usize;
 
             *(ptr as *mut u8) = lo0;
             ptr += 1;
