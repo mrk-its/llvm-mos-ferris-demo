@@ -169,9 +169,8 @@ fn text_init() {
 }
 
 fn scroll_text(pos: usize) {
-    let text_addr = TEXT.as_ptr() as usize + pos;
     unsafe {
-        DLIST.text.addr = text_addr;
+        DLIST.text.addr = TEXT.as_ptr() as usize + pos;
     }
 }
 
@@ -199,110 +198,108 @@ fn ferris_init(ferris_start_addr: usize) {
     }
 }
 
-fn update_dlist(index: &mut usize, lines: &mut [DisplayListLine], byte_offs: u8) {
-    unsafe {
-        let lo0 = FERRIS_LO_OFFSETS[(*index as usize) & 3] + byte_offs;
-        let lo1 = lo0 + 64;
-        let lo2 = lo0 + 128;
-        let lo3 = lo0 + 192;
-        for lines in lines.chunks_mut(16) {
-            let mut i = *index as usize;
-            if i >= FERRIS_HEIGHT - FERRIS_MARGIN {
-                i = 0;
-            }
-            let mut optr: usize = &(FERRIS_HI_OFFSETS[i]) as *const u8 as usize;
-            let mut ptr = &(lines[0].addr) as *const usize as *const u8 as usize;
-
-            *(ptr as *mut u8) = lo0;
-            ptr += 1;
-            *(ptr as *mut u8) = *(optr as *mut u8);
-            ptr += 2;
-            optr += 1;
-            *(ptr as *mut u8) = lo1;
-            ptr += 1;
-            *(ptr as *mut u8) = *(optr as *mut u8);
-            ptr += 2;
-            optr += 1;
-            *(ptr as *mut u8) = lo2;
-            ptr += 1;
-            *(ptr as *mut u8) = *(optr as *mut u8);
-            ptr += 2;
-            optr += 1;
-            *(ptr as *mut u8) = lo3;
-            ptr += 1;
-            *(ptr as *mut u8) = *(optr as *mut u8);
-            ptr += 2;
-            optr += 1;
-
-            *(ptr as *mut u8) = lo0;
-            ptr += 1;
-            *(ptr as *mut u8) = *(optr as *mut u8);
-            ptr += 2;
-            optr += 1;
-            *(ptr as *mut u8) = lo1;
-            ptr += 1;
-            *(ptr as *mut u8) = *(optr as *mut u8);
-            ptr += 2;
-            optr += 1;
-            *(ptr as *mut u8) = lo2;
-            ptr += 1;
-            *(ptr as *mut u8) = *(optr as *mut u8);
-            ptr += 2;
-            optr += 1;
-            *(ptr as *mut u8) = lo3;
-            ptr += 1;
-            *(ptr as *mut u8) = *(optr as *mut u8);
-            ptr += 2;
-            optr += 1;
-            *(ptr as *mut u8) = lo0;
-            ptr += 1;
-            *(ptr as *mut u8) = *(optr as *mut u8);
-            ptr += 2;
-            optr += 1;
-            *(ptr as *mut u8) = lo1;
-            ptr += 1;
-            *(ptr as *mut u8) = *(optr as *mut u8);
-            ptr += 2;
-            optr += 1;
-            *(ptr as *mut u8) = lo2;
-            ptr += 1;
-            *(ptr as *mut u8) = *(optr as *mut u8);
-            ptr += 2;
-            optr += 1;
-            *(ptr as *mut u8) = lo3;
-            ptr += 1;
-            *(ptr as *mut u8) = *(optr as *mut u8);
-            ptr += 2;
-            optr += 1;
-            *(ptr as *mut u8) = lo0;
-            ptr += 1;
-            *(ptr as *mut u8) = *(optr as *mut u8);
-            ptr += 2;
-            optr += 1;
-            *(ptr as *mut u8) = lo1;
-            ptr += 1;
-            *(ptr as *mut u8) = *(optr as *mut u8);
-            ptr += 2;
-            optr += 1;
-            *(ptr as *mut u8) = lo2;
-            ptr += 1;
-            *(ptr as *mut u8) = *(optr as *mut u8);
-            ptr += 2;
-            optr += 1;
-            *(ptr as *mut u8) = lo3;
-            ptr += 1;
-            *(ptr as *mut u8) = *(optr as *mut u8);
-            ptr += 2;
-            optr += 1;
-            *index += 16;
+unsafe fn update_dlist(index: &mut i16, lines: &mut [DisplayListLine], byte_offs: u8) {
+    let lo0 = FERRIS_LO_OFFSETS[(*index as usize) & 3] + byte_offs;
+    let lo1 = lo0 + 64;
+    let lo2 = lo0 + 128;
+    let lo3 = lo0 + 192;
+    for lines in lines.chunks_mut(16) {
+        let mut i = *index as usize;
+        if i >= FERRIS_HEIGHT - FERRIS_MARGIN{
+            i = 0;
         }
+        let mut ptr = &(lines[0].addr) as *const usize as *const u8 as usize;
+        let mut optr: usize = &(FERRIS_HI_OFFSETS[i]) as *const u8 as usize;
+
+        *(ptr as *mut u8) = lo0;
+        ptr += 1;
+        *(ptr as *mut u8) = *(optr as *mut u8);
+        ptr += 2;
+        optr += 1;
+        *(ptr as *mut u8) = lo1;
+        ptr += 1;
+        *(ptr as *mut u8) = *(optr as *mut u8);
+        ptr += 2;
+        optr += 1;
+        *(ptr as *mut u8) = lo2;
+        ptr += 1;
+        *(ptr as *mut u8) = *(optr as *mut u8);
+        ptr += 2;
+        optr += 1;
+        *(ptr as *mut u8) = lo3;
+        ptr += 1;
+        *(ptr as *mut u8) = *(optr as *mut u8);
+        ptr += 2;
+        optr += 1;
+
+        *(ptr as *mut u8) = lo0;
+        ptr += 1;
+        *(ptr as *mut u8) = *(optr as *mut u8);
+        ptr += 2;
+        optr += 1;
+        *(ptr as *mut u8) = lo1;
+        ptr += 1;
+        *(ptr as *mut u8) = *(optr as *mut u8);
+        ptr += 2;
+        optr += 1;
+        *(ptr as *mut u8) = lo2;
+        ptr += 1;
+        *(ptr as *mut u8) = *(optr as *mut u8);
+        ptr += 2;
+        optr += 1;
+        *(ptr as *mut u8) = lo3;
+        ptr += 1;
+        *(ptr as *mut u8) = *(optr as *mut u8);
+        ptr += 2;
+        optr += 1;
+        *(ptr as *mut u8) = lo0;
+        ptr += 1;
+        *(ptr as *mut u8) = *(optr as *mut u8);
+        ptr += 2;
+        optr += 1;
+        *(ptr as *mut u8) = lo1;
+        ptr += 1;
+        *(ptr as *mut u8) = *(optr as *mut u8);
+        ptr += 2;
+        optr += 1;
+        *(ptr as *mut u8) = lo2;
+        ptr += 1;
+        *(ptr as *mut u8) = *(optr as *mut u8);
+        ptr += 2;
+        optr += 1;
+        *(ptr as *mut u8) = lo3;
+        ptr += 1;
+        *(ptr as *mut u8) = *(optr as *mut u8);
+        ptr += 2;
+        optr += 1;
+        *(ptr as *mut u8) = lo0;
+        ptr += 1;
+        *(ptr as *mut u8) = *(optr as *mut u8);
+        ptr += 2;
+        optr += 1;
+        *(ptr as *mut u8) = lo1;
+        ptr += 1;
+        *(ptr as *mut u8) = *(optr as *mut u8);
+        ptr += 2;
+        optr += 1;
+        *(ptr as *mut u8) = lo2;
+        ptr += 1;
+        *(ptr as *mut u8) = *(optr as *mut u8);
+        ptr += 2;
+        optr += 1;
+        *(ptr as *mut u8) = lo3;
+        ptr += 1;
+        *(ptr as *mut u8) = *(optr as *mut u8);
+        ptr += 2;
+        optr += 1;
+        *index += 16;
     }
 }
 
 fn set_ferris_position(x: i8, y: i8) {
     let x_offs = 128 as u8 + x as u8;
 
-    let mut index = ((FERRIS_HEIGHT as i16 - SCREEN_HEIGHT as i16) / 2 + y as i16) as usize;
+    let mut index = ((FERRIS_HEIGHT as i16 - SCREEN_HEIGHT as i16) / 2 + y as i16);
 
     unsafe {
         let byte_offs = x_offs >> 2;
