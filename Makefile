@@ -1,4 +1,4 @@
-CLANG = ../llvm-mos/build/bin/clang
+CLANG = clang
 
 all: target/mos-unknown-none/debug/ferris
 
@@ -9,7 +9,7 @@ src/ferris.dat: create_ferris
 	./create_ferris > src/ferris.dat
 
 target/mos-unknown-none/debug/ferris: src/ferris.dat src/*.rs Cargo.toml
-	cargo +mos build -vv
+	cargo +mos build
 
 run: target/mos-unknown-none/debug/ferris
 	atari800 -run target/mos-unknown-none/debug/ferris

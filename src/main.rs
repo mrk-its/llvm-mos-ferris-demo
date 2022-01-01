@@ -7,7 +7,6 @@
 mod print;
 pub mod math;
 mod write_to;
-use core::panic::PanicInfo;
 use volatile_register::{RO, RW};
 
 const TIMER: *const RO<u8> = 0x14 as *const RO<u8>;
@@ -28,6 +27,8 @@ const COLOR_REGS: *mut ColorRegs = 0xd012 as *mut ColorRegs;
 const TEXT: &[u8] = b"                                    \
                        https://github.com/llvm-mos                                    \
                        https://github.com/mrk-its/rust                                    ";
+
+use core::panic::PanicInfo;
 
 #[panic_handler]
 fn panic(_info: &PanicInfo) -> ! {
