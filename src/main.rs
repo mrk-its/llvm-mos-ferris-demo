@@ -7,7 +7,6 @@
 mod print;
 pub mod math;
 mod write_to;
-use core::panic::PanicInfo;
 use volatile_register::{RO, RW};
 
 const TIMER: usize = 0x14;
@@ -49,6 +48,8 @@ const TEXT: &[u8] = b"                                    \
                        https://github.com/llvm-mos                                    \
                        https://github.com/mrk-its/rust                                    \
                        music: Noisy Pillars by Jeroen Tel, Atari conversion by Miker                           ";
+
+use core::panic::PanicInfo;
 
 #[panic_handler]
 fn panic(_info: &PanicInfo) -> ! {
