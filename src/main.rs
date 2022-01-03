@@ -47,7 +47,8 @@ const COLBKS: usize = 0x2c8;
 
 const TEXT: &[u8] = b"                                    \
                        https://github.com/llvm-mos                                    \
-                       https://github.com/mrk-its/rust                                    ";
+                       https://github.com/mrk-its/rust                                    \
+                       music: Noisy Pillars by Jeroen Tel, Atari conversion by Miker                           ";
 
 #[panic_handler]
 fn panic(_info: &PanicInfo) -> ! {
@@ -309,8 +310,17 @@ fn set_ferris_position(x: i8, y: i8) {
     }
 }
 
+type Fptr = unsafe extern "C" fn() -> ();
+const RMT_INIT: usize = 0x8e00;
+const RMT_PLAY: usize = 0x8e03;
+
 #[start]
 fn main(_argc: isize, _args: *const *const u8) -> isize {
+    let rmt_init = &RMT_INIT as *const usize as *const Fptr;
+    let rmt_play = &RMT_PLAY as *const usize as *const Fptr;
+
+    unsafe {(*rmt_init)()}
+
     io_write_u8(SDMCTL, 0);
     wait_vbl();
 
@@ -329,6 +339,7 @@ fn main(_argc: isize, _args: *const *const u8) -> isize {
     wait_vbl();
 
     loop {
+        unsafe {(*rmt_play)()}
         let x = x_offs + math::sin((alpha1 >> 8) as u8) / 4;
         let y = math::sin((alpha2 >> 8) as u8) / 4;
         let ferris_hscr = 15 - (x as u8 & 3);
@@ -336,7 +347,7 @@ fn main(_argc: isize, _args: *const *const u8) -> isize {
         io_write_u8(HSCROLL, ferris_hscr);
 
         set_ferris_position(x, y);
-        alpha1 += 1377;
+        alpha1 += 1365;  // 65536 / (6 * 8)  6 is speed of rmt tune
         alpha2 += 997;
         x_offs += 0;
         cpu_meter_done();

@@ -1,6 +1,10 @@
 CLANG = ../llvm-mos/build/bin/clang
 
-all: target/mos-unknown-none/debug/ferris
+ferris.xex: target/mos-unknown-none/debug/ferris rmt/music.obx
+	cat rmt/music.obx target/mos-unknown-none/debug/ferris > ferris.xex
+
+rmt/music.obx:
+	make -C rmt
 
 create_ferris: tools/create_ferris.c
 	${CLANG} tools/create_ferris.c -o create_ferris
@@ -15,5 +19,6 @@ run: target/mos-unknown-none/debug/ferris
 	atari800 -run target/mos-unknown-none/debug/ferris
 
 clean:
+	make -C rmt clean
 	cargo +mos clean
 	rm -f create_ferris src/ferris.dat
