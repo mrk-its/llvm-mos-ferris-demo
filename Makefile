@@ -1,7 +1,9 @@
 CLANG = clang
+TARGET = mos-a800xl-none
+TARGET_DIR = target/$(TARGET)/release
 
-ferris.xex: target/mos-unknown-none/debug/ferris rmt/music.obx
-	cat rmt/music.obx target/mos-unknown-none/debug/ferris > ferris.xex
+ferris.xex: $(TARGET_DIR)/ferris rmt/music.obx
+	cat rmt/music.obx $(TARGET_DIR)/ferris > ferris.xex
 
 rmt/music.obx:
 	make -C rmt
@@ -12,11 +14,11 @@ create_ferris: tools/create_ferris.c
 src/ferris.dat: create_ferris
 	./create_ferris > src/ferris.dat
 
-target/mos-unknown-none/debug/ferris: src/ferris.dat src/*.rs Cargo.toml
-	cargo +mos build
+$(TARGET_DIR)/ferris: src/ferris.dat src/*.rs Cargo.toml
+	cargo +mos build --release -vv
 
-run: target/mos-unknown-none/debug/ferris
-	atari800 -run target/mos-unknown-none/debug/ferris
+run: $(TARGET_DIR)/ferris
+	atari800 -run $(TARGET_DIR)/ferris
 
 clean:
 	make -C rmt clean

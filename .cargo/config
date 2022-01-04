@@ -1,6 +1,7 @@
 [build]
-target = "mos-unknown-none"
-rustflags = "-Cdebuginfo=0 -Clink-arg=--config -Clink-arg=/opt/llvm-mos-sdk/build/atari/800xl.cfg"
+target = "mos-a800xl-none"
+# rustflags = "-Cdebuginfo=0 -Clink-arg=--config -Clink-arg=llvm-mos-sdk/build/atari/800xl.cfg"
+rustflags = "-Cdebuginfo=0"
 
 [unstable]
 build-std = ["core"]
