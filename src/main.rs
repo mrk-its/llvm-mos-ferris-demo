@@ -90,7 +90,7 @@ const FERRIS_HEIGHT: usize = 208;
 const FERRIS_MARGIN: usize = 16;
 
 const FERRIS_DATA: AlignedImage = AlignedImage {
-    data: *include_bytes!("ferris.dat"),
+    data: *include_bytes!(concat!(env!("OUT_DIR"), "/ferris.dat")),
 };
 
 const SCREEN_HEIGHT: usize = 232;
@@ -233,7 +233,6 @@ unsafe fn update_dlist(index: &mut i16, lines: &mut [DisplayListLine], byte_offs
         *(ptr as *mut u8) = *(optr as *mut u8);
         ptr += 2;
         optr += 1;
-
         *(ptr as *mut u8) = lo0;
         ptr += 1;
         *(ptr as *mut u8) = *(optr as *mut u8);

@@ -17,3 +17,6 @@ overflow-checks = false
 [profile.release]
 lto = true
 opt-level = 3
+
+[build-dependencies]
+png = "0.17"

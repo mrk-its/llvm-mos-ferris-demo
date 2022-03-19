@@ -1,5 +1,5 @@
 [build]
-target = "mos-a800xl-none"
+target = "mos-atari8-none"
 # rustflags = "-Cdebuginfo=0 -Clink-arg=--config -Clink-arg=llvm-mos-sdk/build/atari/800xl.cfg"
 rustflags = "-Cdebuginfo=0"
 
