@@ -50,7 +50,7 @@ const TEXT: &[u8] = b"                                    \
                        https://github.com/mrk-its/rust                                    \
                        music: Noisy Pillars by Jeroen Tel, Atari conversion by Miker                           ";
 
-use core::panic::PanicInfo;
+use core::{panic::PanicInfo, ops::Add};
 
 #[panic_handler]
 fn panic(_info: &PanicInfo) -> ! {
@@ -97,7 +97,7 @@ const FERRIS_DATA: AlignedImage = AlignedImage {
 const SCREEN_HEIGHT: usize = 232;
 
 static mut FERRIS_LO_OFFSETS: [u8; FERRIS_HEIGHT] = [0; FERRIS_HEIGHT];
-static mut FERRIS_HI_OFFSETS: [u8; FERRIS_HEIGHT] = [0; FERRIS_HEIGHT];
+static mut FERRIS_HI_OFFSETS: [u8; FERRIS_HEIGHT * 3] = [0; FERRIS_HEIGHT * 3];
 
 #[derive(Clone, Copy)]
 pub struct DisplayListLine {
@@ -195,7 +195,9 @@ fn ferris_init(ferris_start_addr: usize) {
 
         for i in 0..FERRIS_HEIGHT {
             FERRIS_LO_OFFSETS[i] = addr as u8;
-            FERRIS_HI_OFFSETS[i] = (addr >> 8) as u8;
+            FERRIS_HI_OFFSETS[i * 3] = (addr >> 8) as u8;
+            FERRIS_HI_OFFSETS[i * 3 + 1] = (addr >> 8) as u8;
+            FERRIS_HI_OFFSETS[i * 3 + 2] = (addr >> 8) as u8;
             addr += 64;
         }
     }
@@ -207,94 +209,55 @@ unsafe fn update_dlist(index: &mut i16, lines: &mut [DisplayListLine], byte_offs
     let lo1 = lo0 + 64;
     let lo2 = lo0 + 128;
     let lo3 = lo0 + 192;
+    // let mut optr: usize = &(FERRIS_HI_OFFSETS[*index as usize * 3]) as *const u8 as usize + 1;
+
     for lines in lines.chunks_mut(16) {
         let mut i = *index as usize;
         if i >= FERRIS_HEIGHT - FERRIS_MARGIN{
             i = 0;
         }
-        let mut ptr = &(lines[0].addr) as *const usize as *const u8 as usize;
-        let mut optr: usize = &(FERRIS_HI_OFFSETS[i]) as *const u8 as usize;
+        let optr: usize = &(FERRIS_HI_OFFSETS[i * 3]) as *const u8 as usize + 1;
+        let ptr = &(lines[0].addr) as *const usize as *const u8 as usize;
 
-        *(ptr as *mut u8) = lo0;
-        ptr += 1;
-        *(ptr as *mut u8) = *(optr as *mut u8);
-        ptr += 2;
-        optr += 1;
-        *(ptr as *mut u8) = lo1;
-        ptr += 1;
-        *(ptr as *mut u8) = *(optr as *mut u8);
-        ptr += 2;
-        optr += 1;
-        *(ptr as *mut u8) = lo2;
-        ptr += 1;
-        *(ptr as *mut u8) = *(optr as *mut u8);
-        ptr += 2;
-        optr += 1;
-        *(ptr as *mut u8) = lo3;
-        ptr += 1;
-        *(ptr as *mut u8) = *(optr as *mut u8);
-        ptr += 2;
-        optr += 1;
-        *(ptr as *mut u8) = lo0;
-        ptr += 1;
-        *(ptr as *mut u8) = *(optr as *mut u8);
-        ptr += 2;
-        optr += 1;
-        *(ptr as *mut u8) = lo1;
-        ptr += 1;
-        *(ptr as *mut u8) = *(optr as *mut u8);
-        ptr += 2;
-        optr += 1;
-        *(ptr as *mut u8) = lo2;
-        ptr += 1;
-        *(ptr as *mut u8) = *(optr as *mut u8);
-        ptr += 2;
-        optr += 1;
-        *(ptr as *mut u8) = lo3;
-        ptr += 1;
-        *(ptr as *mut u8) = *(optr as *mut u8);
-        ptr += 2;
-        optr += 1;
-        *(ptr as *mut u8) = lo0;
-        ptr += 1;
-        *(ptr as *mut u8) = *(optr as *mut u8);
-        ptr += 2;
-        optr += 1;
-        *(ptr as *mut u8) = lo1;
-        ptr += 1;
-        *(ptr as *mut u8) = *(optr as *mut u8);
-        ptr += 2;
-        optr += 1;
-        *(ptr as *mut u8) = lo2;
-        ptr += 1;
-        *(ptr as *mut u8) = *(optr as *mut u8);
-        ptr += 2;
-        optr += 1;
-        *(ptr as *mut u8) = lo3;
-        ptr += 1;
-        *(ptr as *mut u8) = *(optr as *mut u8);
-        ptr += 2;
-        optr += 1;
-        *(ptr as *mut u8) = lo0;
-        ptr += 1;
-        *(ptr as *mut u8) = *(optr as *mut u8);
-        ptr += 2;
-        optr += 1;
-        *(ptr as *mut u8) = lo1;
-        ptr += 1;
-        *(ptr as *mut u8) = *(optr as *mut u8);
-        ptr += 2;
-        optr += 1;
-        *(ptr as *mut u8) = lo2;
-        ptr += 1;
-        *(ptr as *mut u8) = *(optr as *mut u8);
-        ptr += 2;
-        optr += 1;
-        *(ptr as *mut u8) = lo3;
-        ptr += 1;
-        *(ptr as *mut u8) = *(optr as *mut u8);
-        ptr += 2;
-        optr += 1;
+        *((ptr + 0 + 0 * 3) as *mut u8) = lo0;
+        *((ptr + 0 + 4 * 3) as *mut u8) = lo0;
+        *((ptr + 0 + 8 * 3) as *mut u8) = lo0;
+        *((ptr + 0 + 12 * 3) as *mut u8) = lo0;
+
+        *((ptr + 0 + 1 * 3) as *mut u8) = lo1;
+        *((ptr + 0 + 5 * 3) as *mut u8) = lo1;
+        *((ptr + 0 + 9 * 3) as *mut u8) = lo1;
+        *((ptr + 0 + 13 * 3) as *mut u8) = lo1;
+
+        *((ptr + 0 + 2 * 3) as *mut u8) = lo2;
+        *((ptr + 0 + 6 * 3) as *mut u8) = lo2;
+        *((ptr + 0 + 10 * 3) as *mut u8) = lo2;
+        *((ptr + 0 + 14 * 3) as *mut u8) = lo2;
+
+        *((ptr + 0 + 3 * 3) as *mut u8) = lo3;
+        *((ptr + 0 + 7 * 3) as *mut u8) = lo3;
+        *((ptr + 0 + 11 * 3) as *mut u8) = lo3;
+        *((ptr + 0 + 15 * 3) as *mut u8) = lo3;
+
+        *((ptr + 1 + 0 * 3) as *mut u8) = *((optr + 1 + 0 * 3) as *mut u8);
+        *((ptr + 1 + 1 * 3) as *mut u8) = *((optr + 1 + 1 * 3) as *mut u8);
+        *((ptr + 1 + 2 * 3) as *mut u8) = *((optr + 1 + 2 * 3) as *mut u8);
+        *((ptr + 1 + 3 * 3) as *mut u8) = *((optr + 1 + 3 * 3) as *mut u8);
+        *((ptr + 1 + 4 * 3) as *mut u8) = *((optr + 1 + 4 * 3) as *mut u8);
+        *((ptr + 1 + 5 * 3) as *mut u8) = *((optr + 1 + 5 * 3) as *mut u8);
+        *((ptr + 1 + 6 * 3) as *mut u8) = *((optr + 1 + 6 * 3) as *mut u8);
+        *((ptr + 1 + 7 * 3) as *mut u8) = *((optr + 1 + 7 * 3) as *mut u8);
+        *((ptr + 1 + 8 * 3) as *mut u8) = *((optr + 1 + 8 * 3) as *mut u8);
+        *((ptr + 1 + 9 * 3) as *mut u8) = *((optr + 1 + 9 * 3) as *mut u8);
+        *((ptr + 1 + 10 * 3) as *mut u8) = *((optr + 1 + 10 * 3) as *mut u8);
+        *((ptr + 1 + 11 * 3) as *mut u8) = *((optr + 1 + 11 * 3) as *mut u8);
+        *((ptr + 1 + 12 * 3) as *mut u8) = *((optr + 1 + 12 * 3) as *mut u8);
+        *((ptr + 1 + 13 * 3) as *mut u8) = *((optr + 1 + 13 * 3) as *mut u8);        
+        *((ptr + 1 + 14 * 3) as *mut u8) = *((optr + 1 + 14 * 3) as *mut u8);
+        *((ptr + 1 + 15 * 3) as *mut u8) = *((optr + 1 + 15 * 3) as *mut u8);
+
+        // ptr += 48;
+        // optr += 48;
         *index += 16;
     }
 }
@@ -313,15 +276,11 @@ fn set_ferris_position(x: i8, y: i8) {
 }
 
 type Fptr = unsafe extern "C" fn() -> ();
-const RMT_INIT: usize = 0x8e00;
-const RMT_PLAY: usize = 0x8e03;
+const RMT_INIT: *const Fptr = &0x8e00usize as *const usize as *const Fptr;
+const RMT_PLAY: *const Fptr = &0x8e03usize as *const usize as *const Fptr;
 
 #[start]
 fn main(_argc: isize, _args: *const *const u8) -> isize {
-    let rmt_init = &RMT_INIT as *const usize as *const Fptr;
-    let rmt_play = &RMT_PLAY as *const usize as *const Fptr;
-
-    unsafe {(*rmt_init)()}
 
     io_write_u8(SDMCTL, 0);
     wait_vbl();
@@ -338,10 +297,12 @@ fn main(_argc: isize, _args: *const *const u8) -> isize {
     let mut text_pos: usize = 0;
 
     io_write_u8(SDMCTL, 0x18 | 0x21);
+
+    unsafe {(*RMT_INIT)()}
     wait_vbl();
 
     loop {
-        unsafe {(*rmt_play)()}
+        unsafe {(*RMT_PLAY)()}
         let x = x_offs + math::sin((alpha1 >> 8) as u8) / 4;
         let y = math::sin((alpha2 >> 8) as u8) / 4;
         let ferris_hscr = 15 - (x as u8 & 3);

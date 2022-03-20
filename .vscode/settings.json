@@ -1,4 +1,8 @@
 {
     "rust-analyzer.checkOnSave.allTargets": false,
-    "lldb.library": "/usr/local/lib/liblldb.so"
+    "lldb.library": "/usr/local/lib/liblldb.so",
+    "lldb.displayFormat": "auto",
+    "lldb.showDisassembly": "always",
+    "lldb.dereferencePointers": true,
+    "lldb.consoleMode": "commands"
 }
