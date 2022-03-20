@@ -1,13 +1,14 @@
 #![no_std]
 #![feature(start)]
 #![feature(panic_info_message)]
+#![allow(dead_code)]
 #[macro_use]
 #[allow(unused_macros)]
 
 mod print;
 pub mod math;
 mod write_to;
-use volatile_register::{RO, RW};
+use volatile_register::RW;
 
 const TIMER: usize = 0x14;
 const SDMCTL: usize = 0x22f;
@@ -200,6 +201,7 @@ fn ferris_init(ferris_start_addr: usize) {
     }
 }
 
+#[allow(unused_assignments)]
 unsafe fn update_dlist(index: &mut i16, lines: &mut [DisplayListLine], byte_offs: u8) {
     let lo0 = FERRIS_LO_OFFSETS[(*index as usize) & 3] + byte_offs;
     let lo1 = lo0 + 64;
@@ -300,7 +302,7 @@ unsafe fn update_dlist(index: &mut i16, lines: &mut [DisplayListLine], byte_offs
 fn set_ferris_position(x: i8, y: i8) {
     let x_offs = 128 as u8 + x as u8;
 
-    let mut index = ((FERRIS_HEIGHT as i16 - SCREEN_HEIGHT as i16) / 2 + y as i16);
+    let mut index = (FERRIS_HEIGHT as i16 - SCREEN_HEIGHT as i16) / 2 + y as i16;
 
     unsafe {
         let byte_offs = x_offs >> 2;
