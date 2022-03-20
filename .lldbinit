@@ -1,0 +1,15 @@
+#log enable gdb-remote all -v
+#log enable lldb all -v
+# log enable posix all -v
+#log enable gdb-remote packets
+
+# target create test.elf
+
+target create ferris.elf
+platform select remote-gdb-server
+platform settings -w /
+platform connect connect://172.27.16.1:9001
+platform target-install ferris.xex out
+platform disconnect
+
+gdb-remote  172.27.16.1:9001

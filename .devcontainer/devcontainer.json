@@ -1,5 +1,6 @@
 {
   "image": "mrkits/rust-mos",
   "postStartCommand": "curl -L https://github.com/pfusik/xasm/releases/download/xasm-3.2.0/xasm_3.2.0-1_amd64.deb --output xasm.deb && sudo dpkg -i xasm.deb && rm xasm.deb",
-  "extensions": ["matklad.rust-analyzer", "serayuzgur.crates", "eamodio.gitlens"]
+  "containerEnv": {"WINDOWS_HOST": "${localEnv:WINDOWS_HOST}"},
+  "extensions": ["matklad.rust-analyzer", "serayuzgur.crates", "eamodio.gitlens", "vadimcn.vscode-lldb"]
 }
