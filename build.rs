@@ -5,7 +5,14 @@ fn main() {
     let mut image_data = vec![0; reader.output_buffer_size()];
     reader.next_frame(&mut image_data).unwrap();
     let info = reader.info();
-    println!("width: {}, height: {}, palette: {:?}, color_type: {:?}, output_buffer_size: {:?}", info.width, info.height, info.palette, reader.output_color_type(), reader.output_buffer_size());
+    println!(
+        "width: {}, height: {}, palette: {:?}, color_type: {:?}, output_buffer_size: {:?}",
+        info.width,
+        info.height,
+        info.palette,
+        reader.output_color_type(),
+        reader.output_buffer_size()
+    );
     let out_dir = env::var("OUT_DIR").unwrap();
     let dest_path = Path::new(&out_dir).join("ferris.dat");
     fs::write(&dest_path, image_data).unwrap();

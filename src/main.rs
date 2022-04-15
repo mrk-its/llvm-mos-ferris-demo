@@ -1,6 +1,8 @@
 #![no_std]
 #![feature(start)]
 #![feature(panic_info_message)]
+#![feature(concat_bytes)]
+#![feature(const_mut_refs)]
 #![allow(dead_code)]
 #[macro_use]
 #[allow(unused_macros)]
@@ -45,18 +47,30 @@ const COLBKS: usize = 0x2c8;
 // const SCOLOR_REGS: *mut ColorRegs = 0x2c0 as *mut ColorRegs;
 // const COLOR_REGS: *mut ColorRegs = 0xd012 as *mut ColorRegs;
 
-const TEXT: &[u8] = b"                                    \
-                       https://github.com/llvm-mos                                    \
-                       https://github.com/mrk-its/rust                                    \
-                       music: Noisy Pillars by Jeroen Tel, Atari conversion by Miker                           ";
+const TEXT: &[u8] = &atascii_bytes(&concat_bytes!(
+    b"                                    ",
+    b"Hello EuroLLVM!",
+    b"                                ",
+    b"Welcome to the first llvm-mos demo!",
+    b"                                ",
+    b"And first Rust demo for 6502 target",
+    b"                                ",
+    b"Greetings to llvm-mos hackers: Daniel Thornburgh (mysterymath), John Byrd, Jack Anderson",
+    b"                                ",
+    b"Music: Noisy Pillars by Jeroen Tel, Atari conversion: Miker",
+    b"                                ",
+    b"Demo code & rust-mos port: mrk",
+    b"                                ",
+    b"https://github.com/llvm-mos",
+    b"                                ",
+    b"https://github.com/mrk-its/rust-mos",
+    b"                                ",
+));
 
-use core::{panic::PanicInfo, ops::Add};
+use core::panic::PanicInfo;
 
 #[panic_handler]
 fn panic(_info: &PanicInfo) -> ! {
-    // if let Some(args) = info.message() {
-    //     print::write_args(args);
-    // }
     loop {
         io_write_u8(COLBK, io_read_u8(RANDOM));
     }
@@ -73,9 +87,7 @@ pub fn io_write_u8(addr: usize, value: u8) {
 }
 
 pub fn io_read<T: Copy>(addr: usize) -> T {
-    unsafe {
-        (*(addr as *const RW<T>)).read()
-    }
+    unsafe { (*(addr as *const RW<T>)).read() }
 }
 
 pub fn io_read_u8(addr: usize) -> u8 {
@@ -135,7 +147,7 @@ static mut DLIST: DisplayList = DisplayList {
 };
 
 fn cpu_meter_init() {
-    io_write_u8(PMCTL, 3);  // GTIA: enable players
+    io_write_u8(PMCTL, 3); // GTIA: enable players
     io_write_u8(PMBASE, 0xd8);
     io_write_u8(HPOSP0, 0xcc - 6);
     io_write_u8(HPOSP1, 0x2c + 6);
@@ -151,10 +163,10 @@ fn cpu_meter_done() {
 
 fn wait_vbl() {
     let next_t = io_read_u8(TIMER) + 1;
-    while io_read_u8(TIMER) != next_t {};
+    while io_read_u8(TIMER) != next_t {}
 }
 
-fn atascii(c: u8) -> u8 {
+const fn atascii(c: u8) -> u8 {
     match c {
         0x00..=0x1f => c + 0x40,
         0x20..=0x5f => c - 0x20,
@@ -162,13 +174,14 @@ fn atascii(c: u8) -> u8 {
     }
 }
 
-fn text_init() {
-    let text_addr = TEXT.as_ptr() as usize;
-    for i in 0..TEXT.len() {
-        unsafe {
-            *((text_addr + i) as *const u8 as *mut u8) = atascii(TEXT[i]);
-        }
+const fn atascii_bytes<const N: usize>(text: &[u8; N]) -> [u8; N] {
+    let mut ret = [0; N];
+    let mut i = 0;
+    while i < N {
+        ret[i] = atascii(text[i]);
+        i += 1;
     }
+    ret
 }
 
 fn scroll_text(pos: usize) {
@@ -213,7 +226,7 @@ unsafe fn update_dlist(index: &mut i16, lines: &mut [DisplayListLine], byte_offs
 
     for lines in lines.chunks_mut(16) {
         let mut i = *index as usize;
-        if i >= FERRIS_HEIGHT - FERRIS_MARGIN{
+        if i >= FERRIS_HEIGHT - FERRIS_MARGIN {
             i = 0;
         }
         let optr: usize = &(FERRIS_HI_OFFSETS[i * 3]) as *const u8 as usize + 1;
@@ -252,7 +265,7 @@ unsafe fn update_dlist(index: &mut i16, lines: &mut [DisplayListLine], byte_offs
         *((ptr + 1 + 10 * 3) as *mut u8) = *((optr + 1 + 10 * 3) as *mut u8);
         *((ptr + 1 + 11 * 3) as *mut u8) = *((optr + 1 + 11 * 3) as *mut u8);
         *((ptr + 1 + 12 * 3) as *mut u8) = *((optr + 1 + 12 * 3) as *mut u8);
-        *((ptr + 1 + 13 * 3) as *mut u8) = *((optr + 1 + 13 * 3) as *mut u8);        
+        *((ptr + 1 + 13 * 3) as *mut u8) = *((optr + 1 + 13 * 3) as *mut u8);
         *((ptr + 1 + 14 * 3) as *mut u8) = *((optr + 1 + 14 * 3) as *mut u8);
         *((ptr + 1 + 15 * 3) as *mut u8) = *((optr + 1 + 15 * 3) as *mut u8);
 
@@ -264,7 +277,6 @@ unsafe fn update_dlist(index: &mut i16, lines: &mut [DisplayListLine], byte_offs
 
 fn set_ferris_position(x: i8, y: i8) {
     let x_offs = 128 as u8 + x as u8;
-
     let mut index = (FERRIS_HEIGHT as i16 - SCREEN_HEIGHT as i16) / 2 + y as i16;
 
     unsafe {
@@ -281,38 +293,52 @@ const RMT_PLAY: *const Fptr = &0x8e03usize as *const usize as *const Fptr;
 
 #[start]
 fn main(_argc: isize, _args: *const *const u8) -> isize {
-
     io_write_u8(SDMCTL, 0);
     wait_vbl();
 
     let ferris_start_addr = &FERRIS_DATA as *const AlignedImage as usize;
 
     cpu_meter_init();
-    text_init();
     ferris_init(ferris_start_addr);
 
     let mut alpha1: usize = 0;
     let mut alpha2: usize = 0;
-    let mut x_offs: i8 = 0;
     let mut text_pos: usize = 0;
+
+    let mut frame_cnt: u16 = 0;
 
     io_write_u8(SDMCTL, 0x18 | 0x21);
 
-    unsafe {(*RMT_INIT)()}
+    unsafe { (*RMT_INIT)() }
     wait_vbl();
-
+    const START_DELAY: u16 = 128;
+    const EFF2_DELAY: u16 = 896;
     loop {
-        unsafe {(*RMT_PLAY)()}
-        let x = x_offs + math::sin((alpha1 >> 8) as u8) / 4;
-        let y = math::sin((alpha2 >> 8) as u8) / 4;
+        unsafe { (*RMT_PLAY)() }
+
+        let (x, y) = if frame_cnt < START_DELAY {
+            (127, 0)
+        } else if frame_cnt - START_DELAY < 512 {
+            (((frame_cnt - START_DELAY) / 2 - 128) as i8, 0)
+        } else {
+            let x_offs = if frame_cnt - START_DELAY < EFF2_DELAY {
+                (frame_cnt - START_DELAY - EFF2_DELAY) as i16
+            } else {
+                0
+            };
+            let x = x_offs / 2 + (math::sin((alpha1 >> 8) as u8) / 4) as i16;
+            let x = x.max(-128).min(127) as i8;
+            let y = math::sin((alpha2 >> 8) as u8) / 4;
+            (x, y)
+        };
+
         let ferris_hscr = 15 - (x as u8 & 3);
 
         io_write_u8(HSCROLL, ferris_hscr);
 
         set_ferris_position(x, y);
-        alpha1 += 1365;  // 65536 / (6 * 8)  6 is speed of rmt tune
+        alpha1 += 1365; // 65536 / (6 * 8)  6 is speed of rmt tune
         alpha2 += 997;
-        x_offs += 0;
         cpu_meter_done();
         scroll_text(text_pos / 4);
 
@@ -346,5 +372,7 @@ fn main(_argc: isize, _args: *const *const u8) -> isize {
 
         text_pos = (text_pos + 1) % ((TEXT.len() - 32) * 4);
         wait_vbl();
+
+        frame_cnt += 1;
     }
 }
