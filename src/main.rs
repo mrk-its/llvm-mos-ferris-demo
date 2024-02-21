@@ -7,9 +7,8 @@
 #[macro_use]
 #[allow(unused_macros)]
 
-mod print;
 pub mod math;
-mod write_to;
+mod utils;
 use volatile_register::RW;
 
 const TIMER: usize = 0x14;
@@ -112,12 +111,14 @@ static mut FERRIS_LO_OFFSETS: [u8; FERRIS_HEIGHT] = [0; FERRIS_HEIGHT];
 static mut FERRIS_HI_OFFSETS: [u8; FERRIS_HEIGHT * 3] = [0; FERRIS_HEIGHT * 3];
 
 #[derive(Clone, Copy)]
+#[repr(C)]
 pub struct DisplayListLine {
     pub mode: u8,
     pub addr: usize,
 }
 
 #[repr(align(1024))]
+#[repr(C)]
 pub struct DisplayList {
     pub data: [u8; 1],
     pub lines: [DisplayListLine; 208],
@@ -197,7 +198,7 @@ fn ferris_init(ferris_start_addr: usize) {
     io_write_u8(COLPF0S, 0x20);
 
     unsafe {
-        let dladdr = &mut DLIST as *mut DisplayList as usize;
+        let dladdr = core::ptr::addr_of_mut!(DLIST) as usize;
         DLIST.footer.addr = dladdr;
 
         io_write(DLPTRS, dladdr);

@@ -1,5 +1,5 @@
 CLANG = clang
-TARGET = mos-atari8-none
+TARGET = mos-atari8-dos
 TARGET_DIR = target/$(TARGET)/release
 DEPS_DIR = $(TARGET_DIR)/deps/
 

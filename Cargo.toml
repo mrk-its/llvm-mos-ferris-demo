@@ -5,6 +5,7 @@ edition = "2018"
 
 [dependencies]
 volatile-register = "0"
+ufmt-stdio = "0"
 
 [workspace]
 

@@ -1,5 +1,5 @@
 [build]
-target = "mos-atari8-none"
+target = "mos-atari8-dos"
 
 [unstable]
 build-std = ["core"]
